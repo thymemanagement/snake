@@ -1,0 +1,30 @@
+{
+    "rate" : 10,
+    "board" : { "width" : 18, "height" : 15 },
+    "gridSize" : { "width" : 30, "height" : 30 },
+    "background" : "cyan",
+    "players" : [
+	{ "color" : "yellow",
+	  "up" : 82,
+	  "left" : 80,
+	  "down" : 81,
+	  "right" : 79,
+	  "reset" : 21
+	},
+	{ "color" : "green",
+	  "up" : 26,
+	  "left" : 4,
+	  "down" : 22,
+	  "right" : 7,
+	  "reset" : 21
+	}
+    ],
+    "objects" : [
+	{ "count" : 4,
+	  "type" : "apple",
+	  "color" : "red",
+	  "value" : 1 },
+	{ "count" : 4,
+	  "type" : "wall" }
+    ]
+}
