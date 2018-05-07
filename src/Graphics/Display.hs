@@ -23,8 +23,8 @@ drawGame = do
   ps <- use players
   os <- use objects
   mapM_ (drawBlock (pure 4)) $ M.mapWithKey toBlock os
-  mapM_ (drawBlock (pure 2)) (ps^..traverse.snake.body._tail.traverse)
-  mapM_ (drawBlock (pure 2)) (ps^..traverse.snake.body._head)
+  mapM_ (drawBlock (pure 2)) (ps^..traverse._tail)
+  mapM_ (drawBlock (pure 2)) (ps^..traverse._head)
   present render
 
 drawBoard :: (MonadReader Renderer m, MonadState Game m, MonadIO m) => m ()

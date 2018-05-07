@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
--- |A stupid little program that prints out keyboard scancodes if you type in the window.
+-- | A stupid little program that prints out keyboard scancodes if you type in the window.
 
 module Main where
 

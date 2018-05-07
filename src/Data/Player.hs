@@ -13,9 +13,8 @@ import Data.Snake
 import Graphics.Utils
 
 import Data.Function
-import qualified Data.List.NonEmpty as N
 
-import Control.Lens
+import Control.Lens hiding (_head, _tail)
 import qualified Data.Map as M
 import SDL
 
@@ -25,8 +24,27 @@ data Player = Player { _snake :: Snake,
 
 makeLenses ''Player
 
+instance HasHead Player where
+  _head = snake._head
+
+instance HasTail Player where
+  _tail = snake._tail
+
+instance HasLife Player where
+  dead = prism' id (\p -> (p^?snake.dead) >> Just p)
+  alive = prism' id (\p -> (p^?snake.alive) >> Just p)
+
+instance HasPos Player where
+  pos = snake.pos
+
+instance HasColor Player where
+  color = snake.color
+
+instance Blocks Player where
+  blocks = snake.blocks
+
 newPlayer :: Block -> Scancode -> Scancode -> Scancode -> Scancode -> Scancode -> Player
-newPlayer b u d l r reset = Player (newSnake b) (makeMoveset u d l r reset) b
+newPlayer b u d l r n = Player (newSnake b) (makeMoveset u d l r n) b
 
 makeMoveset :: Scancode -> Scancode -> Scancode -> Scancode -> Scancode -> M.Map Scancode (Player -> Player)
 makeMoveset u d l r n = M.fromList [(u, moveUp), (d, moveDown), (l, moveLeft), (r, moveRight), (n, spawnSnake)]
@@ -35,11 +53,11 @@ updatePlayer :: Player -> Player
 updatePlayer = snake.alive %~ updateSnake
 
 spawnSnake :: Player -> Player
-spawnSnake p = p & snake.dead .~ newSnake (p^.base)
+spawnSnake p = p & snake .~ newSnake (p^.base)
 
 moveDir :: Pos -> Player -> Player
 moveDir d = snake.alive %~ moveDir'
-  where moveDir' s = if N.tail (s^.body) == [] || crossZ (s^.lastDir) d /= 0
+  where moveDir' s = if (s^.._tail) == [] || crossZ (s^.lastDir) d /= 0
                      then s & curDir .~ d
                      else s
 

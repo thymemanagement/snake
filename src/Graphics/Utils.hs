@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Utils
@@ -6,8 +5,9 @@ module Graphics.Utils
   , Pos
   , Color
   , Block(..)
-  , pos
-  , style
+  , Blocks(..)
+  , HasPos(..)
+  , HasColor(..)
   , usa
   , readColor) where
 
@@ -23,11 +23,23 @@ import SDL
 type Pos = V2 CInt
 type Color = V4 Word8
 
-data Block = Block { _pos :: Pos,
-                     _style :: Color }
+data Block = Block Pos Color
            deriving (Eq)
 
-makeLenses ''Block
+class HasPos a where
+  pos :: Lens' a Pos
+
+instance HasPos Block where
+  pos = lens (\b -> case b of Block p _ -> p) (\b p -> case b of Block _ c -> Block p c)
+
+class HasColor a where
+  color :: Lens' a Color
+
+instance HasColor Block where
+  color = lens (\b -> case b of Block _ c -> c) (\b c -> case b of Block p _ -> Block p c)
+
+class Blocks a where
+  blocks :: Traversal' a Block
 
 usa :: (Ord a, RealFrac a, Floating a) => Colour a -> Color
 usa c = case toSRGB24 c of RGB r g b -> V4 r g b 0

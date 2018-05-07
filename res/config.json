@@ -25,6 +25,7 @@
 	  "color" : "red",
 	  "value" : 1 },
 	{ "count" : 4,
+	  "color" : "grey",
 	  "type" : "wall" }
     ]
 }

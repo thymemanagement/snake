@@ -28,7 +28,7 @@ readGame path = do
   gr <- readPos "width" "height" =<< (testProperty "gridSize" $ (value^?_Object.ix "gridSize"))
   bc <- readColor =<< (testProperty "background" . fmap T.unpack $ (value^?_Object.ix "background"._String))
   ps <- readPlayers bd =<< (testProperty "players" $ (value^?_Object.ix "players"._Array))
-  os <- readObjects bd (setOf (traverse.snake.body.traverse.pos) ps) =<< (testProperty "objects" $ (value^?_Object.ix "objects"._Array))
+  os <- readObjects bd (setOf (traverse.snake.blocks.pos) ps) =<< (testProperty "objects" $ (value^?_Object.ix "objects"._Array))
   t <- liftIO getCurrentTime
   return (Game ps os bd gr bc rt t)
 
@@ -64,12 +64,13 @@ readObject :: (MonadError String m) => Value -> m (V.Vector GameObj)
 readObject value = do
   ct <- testProperty "count" . fmap fromIntegral $ (value^?_Object.ix "count"._Integer)
   ty <- testProperty "type" $ (value^?_Object.ix "type"._String)
+  cl <- readColor =<< (testProperty "color". fmap T.unpack $ (value^?_Object.ix "color"._String))
   case ty of
     "apple" -> do
-      cl <- readColor =<< (testProperty "color" . fmap T.unpack $ (value^?_Object.ix "color"._String))
       vl <- testProperty "value" . fmap fromIntegral $ (value^?_Object.ix "value"._Integer)
       return (V.replicate ct (newApple cl vl))
-    "wall"  -> return (V.replicate ct Wall)
+    "wall"  -> do
+      return (V.replicate ct (newWall cl))
     xs      -> throwError ("Could not determine game object type of " ++ show xs)
   
 failWith :: (MonadError e m) => e -> Maybe a -> m a

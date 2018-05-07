@@ -1,17 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Data.Snake
-  ( Snake(..)
-  , pos
-  , style
-  , body
+  ( Snake(Snake)
+  , HasHead(..)
+  , HasTail(..)
+  , HasLife(..)
   , curDir
   , lastDir
-  , size
-  , dead
-  , alive
-  , _head
-  , _tail
   , newSnake
   , updateSnake
   , addSnake
@@ -29,21 +25,44 @@ data Snake = Snake { _body :: NonEmpty Block,
                      _curDir :: Pos,
                      _lastDir :: Pos,
                      _size :: Int,
-                     __dead :: Bool }
+                     _isDead :: Bool }
 
 makeLenses ''Snake
 
-dead :: Prism' Snake Snake
-dead = prism' id (\s -> if s^._dead then Just s else Nothing)
+class HasHead s where
+  _head :: Lens' s Block
 
-alive :: Prism' Snake Snake
-alive = prism' id (\s -> if s^._dead then Nothing else Just s)
+instance HasHead (NonEmpty Block) where
+  _head = lens head (\xs x -> x :| tail xs)
 
-_head :: Lens' (NonEmpty a) a
-_head f xs = fmap (:| tail xs) . f . head $ xs
+instance HasHead Snake where
+  _head = body.(lens head (\xs x -> x :| tail xs))
 
-_tail :: Lens' (NonEmpty a) [a]
-_tail f xs = fmap (head xs :|) . f . tail $ xs
+class HasTail s where
+  _tail :: Traversal' s Block
+
+instance HasTail (NonEmpty Block) where
+  _tail = (lens tail (\xs t -> head xs :| t)) . traverse
+
+instance HasTail Snake where
+  _tail = body._tail
+
+class HasLife a where
+  dead :: Prism' a a
+  alive :: Prism' a a
+
+instance HasLife Snake where
+  dead = prism' id (\s -> if s^.isDead then Just s else Nothing)
+  alive = prism' id (\s -> if s^.isDead then Nothing else Just s)
+
+instance HasPos Snake where
+  pos = _head.pos
+
+instance HasColor Snake where
+  color = _head.color
+
+instance Blocks Snake where
+  blocks = body.traverse
 
 newSnake :: Block -> Snake
 newSnake b = Snake (b :| []) (pure 0) (pure 0) 1 False
@@ -64,8 +83,7 @@ addSnake :: Int -> Snake -> Snake
 addSnake n s = s & size +~ n
 
 killSnake :: Snake -> Snake
-killSnake s = s & _dead .~ True & body %~ \xs ->
-  (head xs & style .~ (usa red)) :| (tail xs & traverse.style .~ (usa salmon))
+killSnake s = s & isDead .~ True & _head.color .~ (usa red) & _tail.color .~ (usa salmon)
 
 snakeIdle :: Snake -> Bool
 snakeIdle s = s^.curDir == 0

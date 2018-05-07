@@ -52,18 +52,18 @@ checkCollisions :: (MonadState Game m, MonadIO m) => m ()
 checkCollisions = do
   ps <- use players
   os <- use objects
-  players <~ (traverse (snakeObjCollision os) ps)
+  players <~ (traverse.alive) (snakeObjCollision os) ps
   ps' <- use players
-  players <~ (traverse snakeSnakeCollision ps')
+  players <~ (traverse.alive) snakeSnakeCollision ps'
 
 killPlayer :: (MonadState Game m, MonadIO m) => Player -> m Player
 killPlayer p = do
   p' <- findNewSnakeLocation p
-  return (p' & snake.alive %~ killSnake)  
+  return (p' & snake %~ killSnake)  
 
 snakeSnakeCollision :: (MonadState Game m, MonadIO m) => Player -> m Player
 snakeSnakeCollision p = do
-  let curPos = p^.snake.body._head.pos
+  let curPos = p^.pos
   bSize <- use board
   collision <- snakeHitSnake curPos
   if posOutOfBounds bSize curPos || collision
@@ -76,25 +76,25 @@ posOutOfBounds (V2 w h) (V2 x y) = x < 0 || y < 0 || x >= w || y >= h
 snakeHitSnake :: (MonadState Game m) => Pos -> m Bool
 snakeHitSnake p = do
   ps <- use players
-  return (case filter (==p) (ps^..traverse.snake.alive.body.traverse.pos) of _:[] -> False; _ -> True)
+  return (case filter (==p) (ps^..traverse.blocks.pos) of _:[] -> False; _ -> True)
 
 snakeObjCollision :: (MonadState Game m, MonadIO m) => ObjectMap -> Player -> m Player
-snakeObjCollision os p = M.findWithDefault (return p) (p^.snake.body._head.pos) $ M.mapWithKey (objCollision p) os
+snakeObjCollision os p = M.findWithDefault (return p) (p^.pos) $ M.mapWithKey (objCollision p) os
 
 objCollision :: (MonadState Game m, MonadIO m) => Player -> Pos -> GameObj -> m Player
 objCollision p v (Apple a) = appleCollision p v a
-objCollision p _ Wall      = killPlayer p
+objCollision p _ (Wall _)     = killPlayer p
 
 appleCollision :: (MonadState Game m, MonadIO m) => Player -> Pos -> AppleObj -> m Player
 appleCollision p oldPos a = do
   findNewObjLocation oldPos
-  return (p & snake.alive %~ addSnake (a^.nutrition))
+  return (p & snake %~ addSnake (a^.nutrition))
 
 findNewObjLocation :: (MonadState Game m, MonadIO m) => Pos -> m ()
 findNewObjLocation oldPos = do
   range <- use board
   objSet <- fmap M.keysSet (use objects)
-  snakeSet <- fmap (setOf (traverse.snake.alive.body.traverse.pos)) (use players)
+  snakeSet <- fmap (setOf (traverse.alive.blocks.pos)) (use players)
   newPos <- getRandomPos range (objSet <> snakeSet)
   object <- use (objects.at oldPos)
   objects.at oldPos .= Nothing
@@ -105,8 +105,8 @@ findNewSnakeLocation :: (MonadState Game m, MonadIO m) => Player -> m Player
 findNewSnakeLocation p = do
   range <- use board
   objSet <- M.keysSet <$> use objects
-  snakeSet <- setOf (traverse.snake.alive.body.traverse.pos) <$> use players
-  newPos <- getRandomPos range (objSet <> snakeSet S.\\ (setOf (snake.body._tail.traverse.pos) p))
+  snakeSet <- setOf (traverse.alive.blocks.pos) <$> use players
+  newPos <- getRandomPos range (objSet <> snakeSet S.\\ (setOf (_tail.pos) p))
   return (p & base.pos .~ newPos)
 
 getNRandomPos :: (MonadIO m) => Int -> Pos -> S.Set Pos -> m (V.Vector Pos)

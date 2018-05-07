@@ -18,7 +18,7 @@ handleEvent :: (MonadState Game m, MonadIO m) => Event -> m ()
 handleEvent event = case eventPayload event of
   KeyboardEvent kData -> if keyboardEventKeyMotion kData == Pressed
                          then let sCode = keysymScancode . keyboardEventKeysym $ kData
-                              in players.traverse %= (\p -> findWithDefault id sCode (p^.bindings) p)
+                              in players.traverse %= \p -> findWithDefault id sCode (p^.bindings) p
                          else return ()
   WindowClosedEvent _ -> liftIO exitSuccess
   _ -> return ()
