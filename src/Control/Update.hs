@@ -11,10 +11,11 @@ import Control.Monad
 import Control.Lens
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Monad.Random
 import Data.Time
 import SDL
 
-runGame :: (MonadReader Renderer m, MonadState Game m, MonadIO m) => m ()
+runGame :: (MonadReader Renderer m, MonadState Game m, MonadIO m, MonadRandom m) => m ()
 runGame = do
     runInput
     ct <- liftIO getCurrentTime

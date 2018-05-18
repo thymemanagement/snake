@@ -24,6 +24,12 @@ data Player = Player { _snake :: Snake,
 
 makeLenses ''Player
 
+class HasPlayers a where
+  player :: Traversal' a Player
+
+instance HasPlayers Player where
+  player = id
+
 instance HasHead Player where
   _head = snake._head
 
@@ -31,8 +37,8 @@ instance HasTail Player where
   _tail = snake._tail
 
 instance HasLife Player where
-  dead = prism' id (\p -> (p^?snake.dead) >> Just p)
-  alive = prism' id (\p -> (p^?snake.alive) >> Just p)
+  dead = filtered (view (snake.isDead))
+  alive = filtered (not . view (snake.isDead))
 
 instance HasPos Player where
   pos = snake.pos
@@ -53,7 +59,7 @@ updatePlayer :: Player -> Player
 updatePlayer = snake.alive %~ updateSnake
 
 spawnSnake :: Player -> Player
-spawnSnake p = p & snake .~ newSnake (p^.base)
+spawnSnake p = p & snake.dead .~ newSnake (p^.base)
 
 moveDir :: Pos -> Player -> Player
 moveDir d = snake.alive %~ moveDir'
@@ -72,4 +78,3 @@ moveUp = moveDir $ V2 0 (-1)
 
 moveDown :: Player -> Player
 moveDown = moveDir $ V2 0 1
-

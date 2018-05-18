@@ -9,15 +9,20 @@ module Graphics.Utils
   , HasPos(..)
   , HasColor(..)
   , usa
-  , readColor) where
+  , parseColor
+  , getRandomPos
+  , getNRandomPos) where
 
 import Data.Word
 import Foreign.C.Types
 
 import Control.Lens
 import Control.Monad.Except
+import Control.Monad.Random
 import Data.Colour.Names
 import Data.Colour.SRGB
+import qualified Data.Set as S
+import qualified Data.Vector as V
 import SDL
 
 type Pos = V2 CInt
@@ -44,6 +49,21 @@ class Blocks a where
 usa :: (Ord a, RealFrac a, Floating a) => Colour a -> Color
 usa c = case toSRGB24 c of RGB r g b -> V4 r g b 0
 
-readColor :: (MonadError String m) => String -> m Color
-readColor str = maybe (throwError ("couldn't read color " ++ str)) (return . usa) (readColourName str)
+parseColor :: (MonadError String m) => String -> m Color
+parseColor str = maybe (throwError ("couldn't read color " ++ str)) (return . usa) (readColourName str)
+
+getNRandomPos :: (MonadRandom m) => Int -> Pos -> S.Set Pos -> m (V.Vector Pos)
+getNRandomPos 0 _ _  = return V.empty
+getNRandomPos n b ps = do
+  newPos <- getRandomPos b ps
+  (V.cons newPos) <$> getNRandomPos (n-1) b (S.insert newPos ps)
+
+getRandomPos :: (MonadRandom m) => Pos -> S.Set Pos -> m Pos
+getRandomPos bounds@(V2 x y) ps = do
+  newX <- getRandomR (0,x-1)
+  newY <- getRandomR (0,y-1)
+  let newPos = V2 newX newY
+  if S.member newPos ps
+    then getRandomPos bounds ps
+    else return newPos
 

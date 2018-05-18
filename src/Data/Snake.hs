@@ -8,6 +8,7 @@ module Data.Snake
   , HasLife(..)
   , curDir
   , lastDir
+  , isDead
   , newSnake
   , updateSnake
   , addSnake
@@ -48,12 +49,12 @@ instance HasTail Snake where
   _tail = body._tail
 
 class HasLife a where
-  dead :: Prism' a a
-  alive :: Prism' a a
+  dead :: (Choice p, Applicative f) => Optic' p f a a
+  alive :: (Choice p, Applicative f) => Optic' p f a a
 
 instance HasLife Snake where
-  dead = prism' id (\s -> if s^.isDead then Just s else Nothing)
-  alive = prism' id (\s -> if s^.isDead then Nothing else Just s)
+  dead = filtered (view isDead)
+  alive = filtered (not . view isDead)
 
 instance HasPos Snake where
   pos = _head.pos

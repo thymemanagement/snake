@@ -17,14 +17,14 @@ getWindowSize g = ((g^.board) + 2) * (g^.gridSize)
 drawGame :: (MonadReader Renderer m, MonadState Game m, MonadIO m) => m ()
 drawGame = do
   render <- ask
-  rendererDrawColor render $= (usa black)
+  edgeColor <- use edge
+  rendererDrawColor render $= edgeColor
   clear render
   drawBoard
-  ps <- use players
   os <- use objects
   mapM_ (drawBlock (pure 4)) $ M.mapWithKey toBlock os
-  mapM_ (drawBlock (pure 2)) (ps^..traverse._tail)
-  mapM_ (drawBlock (pure 2)) (ps^..traverse._head)
+  join . gets $ mapMOf_ (players.traverse._tail) (drawBlock (pure 2))
+  join . gets $ mapMOf_ (players.traverse._head) (drawBlock (pure 2))
   present render
 
 drawBoard :: (MonadReader Renderer m, MonadState Game m, MonadIO m) => m ()

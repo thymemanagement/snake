@@ -27,7 +27,7 @@ executable snake
                        Control.Update
                        Paths_snake
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5, sdl2, mtl, containers, lens, text, time, random, aeson >= 1.3, lens-aeson, colour, vector
+  build-depends:       base >= 4.7 && < 5, sdl2, mtl, containers, lens, text, time, MonadRandom, aeson >= 1.3, lens-aeson, colour, vector
 
 executable stupid
   hs-source-dirs:      src
